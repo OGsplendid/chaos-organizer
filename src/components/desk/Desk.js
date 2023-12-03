@@ -5,25 +5,25 @@ export default class Desk {
     this.messageMaker = new MessageMaker();
   }
 
-  // static render() {
-  //   return `
-  //     <div class="desk-wrapper">
-  //       <div class="message">
-  //         sdlkjfasldkjflasjdf;dsf
-  //       </div>
-  //       <div class="message">
-  //       <p>
-  //         sdlkjfasldkjflasjdf;dsf
-  //  <a href='#'>http://dfgfd.com</a>
-  //          dsaf
-  //         dsaf
-  //         sadfdsafadsfdsf
-  //         sdgds
-  //       </p>
-  //       </div>
-  //     </div>
-  //   `;
-  // }
+  static render() {
+    return `
+      <div class="desk-wrapper">
+        <div class="message">
+          sdlkjfasldkjflasjdf;dsf
+        </div>
+        <div class="message">
+        <p>
+          sdlkjfasldkjflasjdf;dsf
+   <a href='#'>http://dfgfd.com</a>
+           dsaf
+          dsaf
+          sadfdsafadsfdsf
+          sdgds
+        </p>
+        </div>
+      </div>
+    `;
+  }
 
   static formMessageObj(message) {
     return {
