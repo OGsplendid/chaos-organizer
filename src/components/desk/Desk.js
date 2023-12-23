@@ -1,44 +1,61 @@
+import { defineFileType } from '../handlers';
+import Popup from '../popup/Popup';
 import MessageMaker from './MessageMaker';
+import './desk.css';
 
 export default class Desk {
-  constructor() {
+  constructor(parentEl) {
+    this.parentEl = parentEl;
     this.messageMaker = new MessageMaker();
   }
 
-  static render() {
+  static get html() {
     return `
-      <div class="desk-wrapper">
-        <div class="message">
-          sdlkjfasldkjflasjdf;dsf
+        <div class="desk-wrapper">
+          <div id="top-scroll" class="top-scroll"></div>
         </div>
-        <div class="message">
-        <p>
-          sdlkjfasldkjflasjdf;dsf
-   <a href='#'>http://dfgfd.com</a>
-           dsaf
-          dsaf
-          sadfdsafadsfdsf
-          sdgds
-        </p>
-        </div>
-      </div>
     `;
   }
 
-  static formMessageObj(message) {
-    return {
-      message,
-    };
+  bindToDOM() {
+    const layout = Desk.html;
+    this.parentEl.insertAdjacentHTML('afterbegin', layout);
+    this.wrapper = this.parentEl.querySelector('.desk-wrapper');
+    this.popup = new Popup(document.body);
+
+    this.bindEvents();
+  }
+
+  bindEvents() {
+    this.onDragLeave = this.onDragLeave.bind(this);
+    this.onDragOver = this.onDragOver.bind(this);
+
+    this.wrapper.addEventListener('dragleave', this.onDragLeave);
+    this.wrapper.addEventListener('dragover', this.onDragOver);
+  }
+
+  onDragLeave(e) {
+    this.wrapper.classList.remove('ondrag');
+  }
+
+  onDragOver(e) {
+    e.preventDefault();
+    this.wrapper.classList.add('ondrag');
+  }
+
+  clear() {
+    const rendered = this.wrapper.querySelectorAll('.message');
+    rendered.forEach((m) => m.remove());
+  }
+
+  render(messages) {
+    this.clear();
+    messages.forEach((message) => {
+      let html;
+      if (message.type === 'text') html = MessageMaker.createTextMessage(message);
+      if (message.type === 'file') html = MessageMaker.createFileMessage(message);
+      if (message.type === 'image') html = MessageMaker.createImgMessage(message);
+      this.wrapper.querySelector('.top-scroll').insertAdjacentHTML('beforebegin', html);
+    });
   }
 }
-
-// const str = 'sdfkjl 1dsk 2ksldfj 3sldfj 2sdlkfj';
-// const arr = str.split(' ');
-// for (let i = 0; i < arr.length; i++) {
-//   if (arr[i].startsWith('2')) {
-//     const withLink = `<a href=${arr[i]}>${arr[i]}</a>`;
-//     arr[i] = withLink;
-//   }
-// }
-// const result = arr.join(' ');
-// console.log(result);

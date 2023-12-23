@@ -1,0 +1,90 @@
+.desk-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: flex-end;
+  background-color: #acb3e8;
+  height: 100%;
+  padding: 20px;
+  overflow: scroll;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+
+.message {
+  position: relative;
+}
+
+.text-message {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20%;
+  max-width: 80%;
+  background-color: #7382f0;
+  border-radius: 15px;
+  padding: 10px;
+  margin-bottom: 10px;
+  white-space: pre-wrap;
+  font-size: 1.4rem;
+}
+
+.img-message {
+  min-width: 20%;
+  max-width: 80%;
+  margin-bottom: 10px;
+}
+
+.file-message {
+  max-width: 300px;
+  height: 200px;
+  border: 1px solid black;
+  border-radius: 15px;
+  padding: 10px;
+  margin-bottom: 10px;
+  font-size: 1.4rem;
+  inline-size: 150px;
+  overflow-wrap: break-word;
+}
+
+.file-name {
+  font-size: medium;
+  margin-bottom: 5px;
+}
+
+.message-options-btn {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 20px;
+  height: 20px;
+  background-image: url("../../../public/icons8-arrow-down-16.png");
+  background-position: center;
+  border-radius: 100%;
+}
+
+.message-options-wrapper {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: absolute;
+  top: calc(50% - 20px);
+  left: -120px;
+  width: 100px;
+  height: 40px;
+  padding: 0;
+}
+
+.message-options-delete {
+  background-color: red;
+}
+
+.message-options-download {
+  background-color: yellow;
+}
+
+.ondrag {
+  background-color: blue;
+  opacity: 0.5;
+}

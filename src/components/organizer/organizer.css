@@ -1,0 +1,89 @@
+.organizer-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  height: 60px;
+  background-color: #7382f0;
+}
+
+.logo-text {
+  font-weight: normal;
+}
+
+.buttons-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 20%;
+  height: 50px;
+}
+
+.button-container {
+  width: 33%;
+}
+
+.search-button {
+  width: 30px;
+  height: 30px;
+  background-image: url("../../../public/search-interface-symbol.png");
+  background-position: center;
+  background-size: contain;
+  background-color: #7382f0;
+  background-repeat: no-repeat;
+  border: none;
+}
+
+.search-button:hover {
+  width: 35px;
+  height: 35px;
+}
+
+.attach-button {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  background-image: url("../../../public/attach-file.png");
+  background-position: center;
+  background-size: contain;
+  background-color: #7382f0;
+  background-repeat: no-repeat;
+  border: none;
+}
+
+.attach-button:hover {
+  width: 35px;
+  height: 35px;
+}
+
+.file-input {
+  position: absolute;
+  clip: rect(0 0 0 0);
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+}
+
+.others-button {
+  width: 30px;
+  height: 30px;
+  background-image: url("../../../public/dots.png");
+  background-position: center;
+  background-size: contain;
+  background-color: #7382f0;
+  background-repeat: no-repeat;
+  border: none;
+}
+
+.others-button:hover {
+  width: 35px;
+  height: 35px;
+}
+
+.search-input {
+  width: 40%;
+  height: 40px;
+  padding: 10px;
+  border-radius: 15px;
+}
