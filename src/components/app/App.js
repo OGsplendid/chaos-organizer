@@ -2,13 +2,14 @@ import Server from '../server/Server';
 import Desk from '../desk/Desk';
 import Input from '../input/Input';
 import Organizer from '../organizer/Organizer';
-import { defineFileType, downloadFile } from '../handlers';
+import { defineFileType, downloadFile, getNotificationInfo } from '../handlers';
 import MessageMaker from '../desk/MessageMaker';
 
 export default class App {
   constructor(parentEl) {
     this.parentEl = parentEl;
     this.server = new Server('http://localhost:7070');
+    this.ws = new WebSocket('ws://localhost:7070/ws');
     this.messages = [];
     this.isLoading = false;
   }
@@ -43,7 +44,8 @@ export default class App {
 
     this.emojiBtn = this.wrapper.querySelector('.emoji-button');
     this.geolocationBtn = this.wrapper.querySelector('.geolocation');
-    // this.notificationBtn = this.wrapper.querySelector('.notification');
+    this.audioBtn = this.wrapper.querySelector('.audio');
+    this.videoBtn = this.wrapper.querySelector('.video');
     this.inputForm = this.wrapper.querySelector('.input-wrapper');
     this.deskWrapper = this.wrapper.querySelector('.desk-wrapper');
     this.topScroll = this.wrapper.querySelector('.top-scroll');
@@ -53,6 +55,7 @@ export default class App {
   }
 
   bindEvents() {
+    this.onWsMessage = this.onWsMessage.bind(this);
     this.handleFileInputChange = this.handleFileInputChange.bind(this);
     this.loadOnScroll = this.loadOnScroll.bind(this);
     this.handleSendMessage = this.handleSendMessage.bind(this);
@@ -62,13 +65,14 @@ export default class App {
     this.onOptionsClick = this.onOptionsClick.bind(this);
     this.onSearchClick = this.onSearchClick.bind(this);
     this.onSearchInputChange = this.onSearchInputChange.bind(this);
-    this.loadOnChange = this.loadOnChange.bind(this);
-    this.store = this.store.bind(this);
-    this.restore = this.restore.bind(this);
     this.onGeolocationClick = this.onGeolocationClick.bind(this);
     this.handleSendCoords = this.handleSendCoords.bind(this);
-    // this.onNotificationClick = this.onNotificationClick.bind(this);
-    // this.scheduleNotification = this.scheduleNotification.bind(this);
+    this.onMediaClick = this.onMediaClick.bind(this);
+
+    this.ws.addEventListener('open', this.onWsOpen);
+    this.ws.addEventListener('message', this.onWsMessage);
+    this.ws.addEventListener('close', this.onWsClose);
+    this.ws.addEventListener('error', this.onWsError);
 
     this.attachButton.addEventListener('click', () => {
       this.fileInput.dispatchEvent(new MouseEvent('click'));
@@ -76,8 +80,7 @@ export default class App {
     this.fileInput.addEventListener('change', this.handleFileInputChange);
     this.searchButton.addEventListener('click', this.onSearchClick);
 
-    window.addEventListener('storage', this.restore);
-    document.addEventListener('DOMContentLoaded', this.restore);
+    document.addEventListener('DOMContentLoaded', this.loadOnScroll);
     this.deskWrapper.addEventListener('scroll', this.checkLoadingNecessity);
     this.deskWrapper.addEventListener('resize', this.checkLoadingNecessity);
     this.inputForm.addEventListener('submit', this.handleSendMessage);
@@ -85,48 +88,50 @@ export default class App {
     this.wrapper.addEventListener('click', this.toggleMessageOptions);
 
     this.geolocationBtn.addEventListener('click', this.onGeolocationClick);
-    // this.notificationBtn.addEventListener('click', this.onNotificationClick);
+    this.audioBtn.addEventListener('click', (e) => {
+      this.onMediaClick(e.target.className);
+    });
+    this.videoBtn.addEventListener('click', (e) => {
+      this.onMediaClick(e.target.className);
+    });
   }
 
-  store() {
-    localStorage.setItem('messages', JSON.stringify(this.messages));
+  static onWsOpen() {
+    MessageMaker.showInfo('Добро пожаловать в чат');
   }
 
-  restore() {
-    this.messages = JSON.parse(localStorage.getItem('messages'));
+  static onWsClose() {
+    MessageMaker.showInfo('Соединение невозможно');
+  }
+
+  onWsMessage(e) {
+    this.messages.push(JSON.parse(e.data));
     this.desk.render(this.messages);
   }
 
-  async loadOnScroll() {
+  static onWsError() {
+    MessageMaker.showInfo('Соединение невозможно');
+  }
+
+  async loadOnScroll() { // загрузка сообщений по скроллу
     this.isLoading = true;
     const data = await this.server.get(this.messages.length);
     if (!data) return;
     this.messages = [...this.messages, ...data];
-    this.store();
     this.desk.render(this.messages);
     setTimeout(() => {
       this.isLoading = false;
-    }, 500);
+    }, 1000);
   }
 
-  checkLoadingNecessity() {
+  checkLoadingNecessity() { // проверка необходимости подгрузки новых сообщений
     const topScroll = document.getElementById('top-scroll');
-    if (topScroll.getBoundingClientRect().bottom > -100 && !this.isLoading) {
+    if (topScroll.getBoundingClientRect().bottom > -200 && !this.isLoading) {
       this.loadOnScroll();
     }
   }
 
-  async loadOnChange(message = false) {
-    if (message) {
-      const newMessage = await this.server.getNew();
-      if (!newMessage) return;
-      this.messages = [newMessage, ...this.messages];
-    }
-    this.store();
-    this.desk.render(this.messages);
-  }
-
-  onSearchClick() {
+  onSearchClick() { // добавить или убрать строку поиска по сообщениям
     this.organizer.toggleSearchInput();
     const searchInput = this.organizerWrapper.querySelector('.search-input');
     searchInput.focus();
@@ -150,7 +155,7 @@ export default class App {
     this.desk.render(result);
   }
 
-  onDrop(e) {
+  onDrop(e) { // обработка DnD
     e.preventDefault();
     this.deskWrapper.classList.remove('ondrag');
     const file = e.dataTransfer.files && e.dataTransfer.files[0];
@@ -163,14 +168,11 @@ export default class App {
       const link = ev.target.result;
       const data = { type, name: file.name, link };
       const message = MessageMaker.createMessageObj(data);
-      const status = await this.server.post(message);
-      if (status === 204) {
-        this.loadOnChange(true);
-      }
+      this.ws.send(JSON.stringify(message));
     });
   }
 
-  handleFileInputChange() {
+  handleFileInputChange() { // добавление вложения
     const file = this.fileInput.files && this.fileInput.files[0];
     if (!file) return;
 
@@ -182,14 +184,11 @@ export default class App {
       const link = e.target.result;
       const data = { type, name: file.name, link };
       const message = MessageMaker.createMessageObj(data);
-      const status = await this.server.post(message);
-      if (status === 204) {
-        this.loadOnChange(true);
-      }
+      this.ws.send(JSON.stringify(message));
     });
   }
 
-  async handleSendMessage(e) {
+  async handleSendMessage(e) { // отправка сообщения через основной input
     e.preventDefault();
     const text = this.wrapper.querySelector('.input').value;
     if (!text.trim()) return;
@@ -200,47 +199,29 @@ export default class App {
     }
     const data = { type: 'text', text };
     const message = MessageMaker.createMessageObj(data);
-    const status = await this.server.post(message);
-    if (status === 204) {
-      this.inputForm.reset();
-      this.loadOnChange(true);
-    }
+    this.ws.send(JSON.stringify(message));
+    this.inputForm.reset();
   }
 
-  toggleMessageOptions(e) {
-    if (e.target.classList.contains('message-options-btn')
-      && e.target.closest('.message').classList.contains('onedit')) {
-      const message = e.target.closest('.message');
-      message.classList.remove('onedit');
-      message.querySelector('.message-options-wrapper').removeEventListener('click', this.onOptionsClick);
-      message.querySelector('.message-options-wrapper').remove();
+  toggleMessageOptions(e) { // нажатие на опции сообщения
+    if (!e.target.classList.contains('message-options-btn')) {
+      const existingOptions = this.deskWrapper.querySelector('.message-options-wrapper');
+      if (existingOptions) existingOptions.remove();
       return;
     }
-
-    const messages = [...this.deskWrapper.querySelectorAll('.message')];
-    if (!messages.length) return;
-    messages.forEach((m) => {
-      m.classList.remove('onedit');
-      const options = m.querySelector('.message-options-wrapper');
-      if (options) {
-        options.removeEventListener('click', this.onOptionsClick);
-        options.remove();
-      }
-    });
-
-    if (e.target.classList.contains('message-options-btn')) {
-      const message = e.target.closest('.message');
-      let html;
-      if (message.classList.contains('text-message')) {
-        html = MessageMaker.createMessageOptions(false);
-      } else {
-        html = MessageMaker.createMessageOptions(true);
-      }
-      message.classList.add('onedit');
-      message.insertAdjacentHTML('beforeend', html);
-      const options = message.querySelector('.message-options-wrapper');
-      options.addEventListener('click', this.onOptionsClick);
+    const active = e.target.closest('.message');
+    if (active.querySelector('.message-options-wrapper')) {
+      active.querySelector('.message-options-wrapper').remove();
+      return;
     }
+    const existingOptions = this.deskWrapper.querySelector('.message-options-wrapper');
+    if (existingOptions) existingOptions.remove();
+    const id = active.getAttribute('data-id');
+    const oneditMessage = this.messages.find((m) => m.id === Number(id));
+    const html = MessageMaker.createMessageOptions(oneditMessage);
+    active.insertAdjacentElement('beforeend', html);
+    const options = active.querySelector('.message-options-wrapper');
+    options.addEventListener('click', this.onOptionsClick);
   }
 
   async onOptionsClick(e) {
@@ -250,22 +231,28 @@ export default class App {
       if (status === 204) {
         const deletable = this.messages.findIndex((m) => m.id === Number(id));
         this.messages.splice(deletable, 1);
-        this.loadOnChange();
+        this.desk.render(this.messages);
       }
     }
     if (e.target.classList.contains('message-options-download')) {
       const linkSrc = e.target.closest('.message').getAttribute('data-link');
-      const fileName = e.target.closest('.message').querySelector('.file-name').textContent;
+      const fileName = e.target.closest('.message').querySelector('p').textContent;
       downloadFile(linkSrc, fileName);
     }
+    // if (e.target.classList.contains('message-options-pin')) {
+    //   const index = this.messages.findIndex((m) => m.id === Number(id));
+    //   this.messages[index].pinned = true;
+    //   this.deskWrapper.insertAdjacentElement('beforebegin', e.target.closest('.message'));
+    // e.target.closest('.message').remove();
+    // }
   }
 
-  onGeolocationClick() {
+  onGeolocationClick() { // отправка геолокации
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition((data) => {
         this.handleSendCoords(data);
       }, (error) => {
-        console.log(error);
+        MessageMaker.showInfo('Разрешите доступ к координатам на вашем устройстве');
       }, { enableHighAccuracy: true });
     }
   }
@@ -274,31 +261,74 @@ export default class App {
     const { latitude, longitude } = await data.coords;
     const geo = { type: 'text', text: `${latitude}, ${longitude}` };
     const message = MessageMaker.createMessageObj(geo);
-    const status = await this.server.post(message);
-    if (status === 204) {
-      this.inputForm.reset();
-      this.loadOnChange(true);
+    this.ws.send(JSON.stringify(message));
+  }
+
+  async onMediaClick(type) { // работа с медиа
+    let stream;
+    if (type === 'audio') {
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+      });
+    } else {
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+        video: true,
+      });
+    }
+
+    const recorder = new MediaRecorder(stream);
+    const chunks = [];
+
+    recorder.addEventListener('start', () => {
+      MessageMaker.showInfo('Запись началась');
+    });
+    recorder.addEventListener('dataavailable', (e) => {
+      chunks.push(e.data);
+    });
+    recorder.addEventListener('stop', async () => {
+      MessageMaker.showInfo('Конец записи');
+      const blob = new Blob(chunks);
+      const link = URL.createObjectURL(blob);
+      const data = { type, name: '', link };
+      const message = MessageMaker.createMessageObj(data);
+      this.ws.send(JSON.stringify(message));
+    });
+    recorder.start();
+    this.wrapper.querySelector('.stopBtn').addEventListener('click', () => {
+      recorder.stop();
+      stream.getTracks().forEach((track) => track.stop());
+    });
+  }
+
+  static handleSchedule(text) { // настройка уведомления
+    const { time, info } = getNotificationInfo(text);
+    if (time <= 0) {
+      MessageMaker.showInfo('Вы не можете запланировать прошедшие события');
+      return;
+    }
+    setTimeout(() => {
+      const notification = new Notification('Scheduled', {
+        body: `${info}`,
+        requireInteraction: true,
+      });
+    }, time);
+  }
+
+  static async scheduleNotification(text) {
+    if (!window.Notification) return;
+
+    if (Notification.permission === 'granted') {
+      App.handleSchedule(text);
+    }
+
+    if (Notification.permission === 'default') {
+      const permission = await Notification.requestPermission();
+      if (permission) {
+        App.handleSchedule(text);
+      } else {
+        MessageMaker.showInfo('Разрешите уведомления в настройках браузера');
+      }
     }
   }
-  //
-  // async scheduleNotification(text) {
-  //   if (Notification.permission === 'granted') {
-  //     this.showNotification(text);
-  //     return;
-  //   }
-  //   if (Notification.permission === 'default') {
-  //     const permission = await Notification.requestPermission();
-  //     if (permission) {
-  //       this.showNotification(text);
-  //     }
-  //   }
-  // }
-
-  // showNotification(text) {
-  //   const notification = new Notification(text, {
-  //     body: 'Chaos Organizer',
-  //     requireInteraction: true,
-  //   });
-  //   console.log(this);
-  // }
 }

@@ -49,13 +49,13 @@ export default class Desk {
   }
 
   render(messages) {
+    if (!messages) return;
+    messages.sort((a, b) => a.id - b.id);
     this.clear();
+    let html;
     messages.forEach((message) => {
-      let html;
-      if (message.type === 'text') html = MessageMaker.createTextMessage(message);
-      if (message.type === 'file') html = MessageMaker.createFileMessage(message);
-      if (message.type === 'image') html = MessageMaker.createImgMessage(message);
-      this.wrapper.querySelector('.top-scroll').insertAdjacentHTML('beforebegin', html);
+      html = MessageMaker.createMessageHTML(message);
+      this.wrapper.insertAdjacentElement('afterbegin', html);
     });
   }
 }

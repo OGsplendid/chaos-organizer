@@ -57,6 +57,35 @@ h1, h2 {
   background-color: #c0c5eb;
 }
 
+.popup {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  opacity: 1;
+  position: absolute;
+  top: 50px;
+  left: 10px;
+  width: 200px;
+  height: 100px;
+  background-color: white;
+  padding: 5px;
+  transition-property: opacity;
+  transition-duration: 3s;
+}
+
+.invisible {
+  opacity: 0;
+  transition-property: opacity;
+  transition-duration: 3s;
+}
+
+/* .visible {
+  opacity: 1;
+  transition-property: opacity;
+  transition-duration: 3s;
+} */
+
 .hidden {
   display: none;
 }

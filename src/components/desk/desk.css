@@ -14,6 +14,7 @@
 
 .message {
   position: relative;
+  margin-bottom: 15px;
 }
 
 .text-message {
@@ -25,24 +26,23 @@
   background-color: #7382f0;
   border-radius: 15px;
   padding: 10px;
-  margin-bottom: 10px;
   white-space: pre-wrap;
   font-size: 1.4rem;
 }
 
-.img-message {
+.image-message {
   min-width: 20%;
   max-width: 80%;
-  margin-bottom: 10px;
+  height: auto;
 }
 
 .file-message {
-  max-width: 300px;
-  height: 200px;
+  min-width: 20%;
+  max-width: 50%;
+  height: auto;
   border: 1px solid black;
   border-radius: 15px;
   padding: 10px;
-  margin-bottom: 10px;
   font-size: 1.4rem;
   inline-size: 150px;
   overflow-wrap: break-word;
@@ -55,7 +55,7 @@
 
 .message-options-btn {
   position: absolute;
-  top: -8px;
+  top: -12px;
   right: -8px;
   width: 20px;
   height: 20px;
@@ -69,22 +69,31 @@
   flex-direction: column;
   justify-content: space-between;
   position: absolute;
-  top: calc(50% - 20px);
-  left: -120px;
+  top: 10px;
+  right: 0;
   width: 100px;
   height: 40px;
   padding: 0;
 }
 
 .message-options-delete {
-  background-color: red;
+  background-color: white;
 }
 
 .message-options-download {
-  background-color: yellow;
+  background-color: white;
+}
+
+.message-options-pin {
+  background-color: white;
 }
 
 .ondrag {
   background-color: blue;
   opacity: 0.5;
+}
+
+.audio-message {
+  width: 300px;
+  height: 50px;
 }

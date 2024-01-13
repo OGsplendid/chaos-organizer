@@ -35,3 +35,16 @@ export const downloadFile = (linkSrc, fileName) => {
   link.download = fileName;
   link.click();
 };
+
+export const getNotificationInfo = (text) => {
+  const arr = text.split(' ');
+  const [query, time, date, ...info] = arr;
+  const scheduled = `${time} ${date}`;
+  const notificationTimeStamp = new Date(scheduled).getTime();
+  const now = new Date().getTime();
+  const difference = notificationTimeStamp - now;
+  return {
+    time: difference,
+    info,
+  };
+};

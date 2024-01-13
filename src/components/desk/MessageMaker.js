@@ -2,81 +2,80 @@ import { getLinks } from '../handlers';
 
 export default class MessageMaker {
   static createMessageObj(data) {
+    const obj = {
+      type: data.type,
+      content: {},
+    };
     if (data.type === 'text') {
-      const textWithLinks = getLinks(data.text);
-      return {
-        type: data.type,
-        content: {
-          text: textWithLinks,
-        },
-      };
+      obj.content.text = getLinks(data.text);
+    } else {
+      obj.content.text = data.name;
+      obj.content.link = data.link;
     }
-    if (data.type === 'image') {
-      return {
-        type: data.type,
-        content: {
-          text: data.name,
-          link: data.link,
-        },
-      };
-    }
-    if (data.type === 'file') {
-      return {
-        type: data.type,
-        content: {
-          text: data.name,
-          link: data.link,
-        },
-      };
-    }
-    return 'undefined';
+    return obj;
   }
 
-  static createTextMessage(message) {
-    const { content } = message;
-    return `
-      <div data-id="${message.id}" class="text-message message">
-        <p>${content.text}</p>
-        <button class="message-options-btn"></button>
-      </div>
-    `;
-  }
+  static createMessageHTML(messageObj) {
+    const { content } = messageObj;
+    const result = document.createElement('div');
+    const button = document.createElement('button');
+    button.className = 'message-options-btn';
+    result.appendChild(button);
+    result.dataset.id = messageObj.id;
+    result.className = `${messageObj.type}-message message`;
 
-  static createFileMessage(message) {
-    const { content } = message;
-    return `
-      <div data-link=${content.link} data-id="${message.id}" class="file-message message">
-        <h5 class='file-name'>${content.text}</h5>
-        <img src='../../../icons8-file-80.png' />
-        <button class="message-options-btn"></button>
-      </div>
-    `;
-  }
-
-  static createImgMessage(message) {
-    const { content } = message;
-    return `
-      <div data-link=${content.link} data-id="${message.id}" class="img-message message">
-        <h5 class='file-name'>${content.text}</h5>
-        <img class="src" src=${content.link} />
-        <button class="message-options-btn"></button>
-      </div>
-    `;
-  }
-
-  static createMessageOptions(withDownload) {
-    if (withDownload) {
-      return `
-        <div class="message-options-wrapper">
-          <button class="message-options-delete">Delete</button>
-          <button class="message-options-download">Download</button>
-        </div>
-      `;
+    if (messageObj.type === 'audio' || messageObj.type === 'video') {
+      const media = document.createElement(`${messageObj.type}`);
+      media.setAttribute('controls', '');
+      media.src = content.link;
+      result.appendChild(media);
+      return result;
     }
-    return `
-      <div class="message-options-wrapper">
-        <button class="message-options-delete">Delete</button>
-      </div>
-    `;
+
+    const p = document.createElement('p');
+    p.innerHTML = content.text;
+
+    if (messageObj.type !== 'text') result.dataset.link = content.link;
+    result.insertBefore(p, button);
+    const img = document.createElement('img');
+    img.className = 'src';
+    if (messageObj.type === 'file') img.src = '../../../icons8-file-80.png';
+    if (messageObj.type === 'image') img.src = `${content.link}#${Math.random()}`;
+    result.insertBefore(img, button);
+    return result;
+  }
+
+  static createMessageOptions(messageObj) {
+    const options = document.createElement('div');
+    options.className = 'message-options-wrapper';
+    const button = document.createElement('button');
+    button.className = 'message-options-delete';
+    button.textContent = 'Delete';
+    options.appendChild(button);
+    const pinBtn = document.createElement('button');
+    pinBtn.className = 'message-options-pin';
+    pinBtn.textContent = 'Pin';
+    options.appendChild(pinBtn);
+    if (messageObj.type === 'text' || messageObj.type === 'audio' || messageObj.type === 'video') return options;
+    const downloadBtn = document.createElement('button');
+    downloadBtn.className = 'message-options-download';
+    downloadBtn.textContent = 'Download';
+    options.appendChild(downloadBtn);
+    return options;
+  }
+
+  static showInfo(info) {
+    let block = document.getElementById('popup');
+    if (!block) {
+      block = document.createElement('div');
+      block.className = 'popup';
+      block.id = 'popup';
+      document.body.appendChild(block);
+    }
+    block.classList.remove('invisible');
+    block.textContent = info;
+    setTimeout(() => {
+      block.classList.add('invisible');
+    }, 3000);
   }
 }

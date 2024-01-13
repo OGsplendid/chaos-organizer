@@ -3,28 +3,11 @@ export default class Server {
     this.url = url;
   }
 
-  async get(startingIndex) {
-    const response = await fetch(`${this.url}/notes/?startingIndex=${startingIndex}`);
-    if (response.status === 400 || this.finished) return null;
+  async get(loadedQuantity) {
+    const response = await fetch(`${this.url}/notes?loadedQuantity=${loadedQuantity}`);
+    if (response.status === 400) return null;
     const data = await response.json();
     return data;
-  }
-
-  async getNew() {
-    const response = await fetch(`${this.url}/note`);
-    const data = await response.json();
-    return data;
-  }
-
-  async post(message) {
-    const response = await fetch(`${this.url}/notes`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(message),
-    });
-    return response.status;
   }
 
   async delete(id) {
